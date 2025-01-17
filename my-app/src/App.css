@@ -40,3 +40,36 @@
 .read-the-docs {
   color: #888;
 }
+
+.app {
+  display: flex;
+  gap: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.data-table {
+  width: 50%;
+}
+
+.graph-table {
+  width: 50%;
+}
+
+.graph-table td.active {
+  background-color: #4caf50;
+}
+
+.graph-table td {
+  height: 20px;
+}
