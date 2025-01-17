@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./App.css"; // CSS 파일 import
 
 function App() {
@@ -53,8 +53,32 @@ function App() {
     return { startMonth, endMonth };
   };
 
+  // 모달 상태 관리
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [isSecondModalOpen] = useState(false);
+
+  const openModal = (project) => {
+    setSelectedProject(project);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedProject(null);
+    setIsModalOpen(false);
+  };
+
+  const openIssueModal = () => {
+    setIsSecondModalOpen();
+  }
+
+  const openSecondModal = () => {
+    setIsSecondModalOpen(true);
+  };
+
   return (
     <div className="app">
+      {/* 데이터 테이블 */}
       <table className="data-table">
         <thead>
           <tr>
@@ -65,7 +89,11 @@ function App() {
         </thead>
         <tbody>
           {items.map((item, index) => (
-            <tr key={index}>
+            <tr
+              key={index}
+              onClick={() => openModal(item)}
+              className="clickable"
+            >
               {headers.map((header) => (
                 <td key={header.value}>{item[header.value]}</td>
               ))}
@@ -73,6 +101,8 @@ function App() {
           ))}
         </tbody>
       </table>
+
+      {/* 그래프 테이블 */}
       <table className="graph-table">
         <thead>
           <tr>
@@ -106,6 +136,61 @@ function App() {
           })}
         </tbody>
       </table>
+
+      {/* 모달 */}
+      {isModalOpen && selectedProject && (
+      <div className="modal">
+        <div className="modal-content">
+          <button className="close-button" onClick={closeModal}>
+            &times;
+          </button>
+          <div className = "modal-header">
+            <h2>프로젝트 정보</h2>
+            <button className="add-button" onClick={openIssueModal}>
+              + 
+            </button>
+          </div>
+          <ul>
+          {Object.entries(selectedProject)
+            .filter(([key]) => ["name", "manager", "startDate"].includes(key)) // 특정 key만 필터링
+            .map(([key, value]) => {
+            // headers에서 key에 해당하는 text를 찾음
+            const headerText = headers.find((header) => header.value === key)?.text || key;
+              return (
+                <li key={key}>
+                  <strong>{headerText}:</strong> {value}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    )}
+
+    {/*이슈 등록모달*/}
+    {openSecondModal(
+      <div className="modal">
+        <div className="modal-content">
+          <button className="close-button" onClick={closeModal}>
+            &times;
+          </button>
+          <div className = "modal-header">
+            <h2>이슈등록</h2>
+          </div>
+          <ul>
+          {Object.entries(selectedProject)
+            .filter(([key]) => ["name", "manager", "startDate"].includes(key)) // 특정 key만 필터링
+            .map(([key, value]) => {
+            // headers에서 key에 해당하는 text를 찾음
+            const headerText = headers.find((header) => header.value === key)?.text || key;
+              return (
+                  "이슈등록 모달"
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
