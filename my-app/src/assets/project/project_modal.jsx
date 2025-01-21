@@ -1,6 +1,6 @@
 import React from "react";
 
-function ProjectModal({ project, onClose, onIssueClick }) {
+function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
   return (
     <div className="modal">
       <div className="modal-content">

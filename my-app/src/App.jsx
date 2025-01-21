@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useRecoilValue } from "recoil";
 import { workersState } from "./assets/project/atom";
 import { headers } from "./assets/project/atom";
-import IssueModal from "./assets/project/issue_modal";
+import IssueModal from "./assets/project/issue_modal.jsx";
 import DataTable from "./assets/project/data_table.jsx";
 import GraphTable from "./assets/project/graph_table.jsx";
 import ProjectModal from "./assets/project/project_modal.jsx";
