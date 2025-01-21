@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 
-function IssueModal({ issue, workers, onClose, onSave }) {
+function IssueModal({ issue, workers, onClose, onSave, mode }) {
   const [editedIssue, setEditedIssue] = useState(issue); // 수정 데이터
-  const [isEditMode, setIsEditMode] = useState(false);   // 수정 모드 상태
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -11,41 +10,34 @@ function IssueModal({ issue, workers, onClose, onSave }) {
 
   const handleSave = () => {
     onSave(editedIssue); // 상위 컴포넌트에 저장 요청
-    setIsEditMode(false); // 수정 모드 종료
-  };
-
-  const handleCancel = () => {
-    setEditedIssue(issue); // 수정 내용 초기화
-    setIsEditMode(false);  // 수정 모드 종료
   };
 
   return (
     <div className="modal">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>이슈 상세 정보</h2>
+          <h2>{mode === "add" ? "이슈 등록" : "이슈 상세 정보"}</h2>
           <button className="close-button" onClick={onClose}>
             &times;
           </button>
         </div>
         <div className="modal-body">
-          {!isEditMode ? ( // 보기 모드
+          {mode === "view" ? ( // 보기 모드
             <>
               <p>
-                <strong>제목:</strong> {editedIssue.title}
+                <strong>제목:</strong> {issue.title}
               </p>
               <p>
-                <strong>상태:</strong> {editedIssue.status}
+                <strong>상태:</strong> {issue.status}
               </p>
               <p>
-                <strong>설명:</strong> {editedIssue.description}
+                <strong>설명:</strong> {issue.description}
               </p>
               <p>
-                <strong>작업자:</strong> {editedIssue.worker || "미지정"}
+                <strong>작업자:</strong> {issue.worker || "미지정"}
               </p>
-              <button onClick={() => setIsEditMode(true)}>수정</button>
             </>
-          ) : ( // 수정 모드
+          ) : ( // 추가 또는 수정 모드
             <>
               <p>
                 <strong>제목:</strong>
@@ -89,8 +81,10 @@ function IssueModal({ issue, workers, onClose, onSave }) {
                 </select>
               </p>
               <div className="modal-footer">
-                <button onClick={handleSave}>저장</button>
-                <button onClick={handleCancel}>취소</button>
+                <button onClick={handleSave}>
+                  {mode === "add" ? "등록" : "저장"}
+                </button>
+                <button onClick={onClose}>취소</button>
               </div>
             </>
           )}

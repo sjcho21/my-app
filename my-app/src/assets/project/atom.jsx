@@ -1,15 +1,18 @@
 import { atom } from 'recoil';
 
-
-// 이슈 모달 상태
-export const issueModalState = atom({
-  key: "issueModalState", // 고유 키
-  default: {
-    isOpen: false, // 모달 열림 상태
-    mode: "view", // view | edit | add
-    selectedIssue: null, // 선택된 이슈 데이터
-    projectId: null, // 이슈가 속한 프로젝트 ID
-  },
+//Data Table 헤더
+export const headers = atom({
+  key: 'headers',
+  default: [
+    { text: "구분", value: "division" },
+    { text: "프로젝트명", value: "name" },
+    { text: "거래처", value: "client" },
+    { text: "시작일", value: "startDate" },
+    { text: "투입기간", value: "term" },
+    { text: "진행률", value: "progress" },
+    { text: "담당자", value: "manager" },
+    { text: "이슈", value: "issue" },
+  ]
 });
 
 //작업자 목록
