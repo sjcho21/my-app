@@ -1,6 +1,6 @@
 import React from "react";
 
-function GraphTable({ items, calculateActiveMonths }) {
+function GraphTable({ items, calculateMonths }) {
   return (
     <table className="graph-table">
       <thead>
@@ -13,7 +13,7 @@ function GraphTable({ items, calculateActiveMonths }) {
       </thead>
       <tbody>
         {items.map((item, index) => {
-          const { startMonth, endMonth } = calculateActiveMonths(item.startDate, item.term);
+          const { startMonth, endMonth } = calculateMonths(item.startDate, item.term);
           return (
             <tr key={index}>
               <td>{item.name}</td>

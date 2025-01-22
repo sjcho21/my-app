@@ -1,46 +1,25 @@
 import React, { useState } from "react";
-import { useRecoilValue } from "recoil";
-import { workersState } from "./assets/project/atom";
-import { headers } from "./assets/project/atom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { workersState } from "./assets/project/atom"; //작업자 명단
+import { header } from "./assets/project/atom"; //프로젝트 헤더 목록
+import { project } from "./assets/project/atom"; //프로젝트 목록
+import { calculateMonths } from "./assets/project/date_util.jsx"; //프로젝트 기간 계산
 import IssueModal from "./assets/project/issue_modal.jsx";
 import DataTable from "./assets/project/data_table.jsx";
 import GraphTable from "./assets/project/graph_table.jsx";
 import ProjectModal from "./assets/project/project_modal.jsx";
-import { calculateActiveMonths } from "./assets/project/date_util.jsx";
+import ProjectAddModal from "./assets/project/add_project_modal.jsx";
 import "./App.css";
 
 function App() {
-  const headers = [
-    { text: "구분", value: "division" },
-    { text: "프로젝트명", value: "name" },
-    { text: "거래처", value: "client" },
-    { text: "시작일", value: "startDate" },
-    { text: "투입기간", value: "term" },
-    { text: "진행률", value: "progress" },
-    { text: "담당자", value: "manager" },
-    { text: "이슈", value: "issue" },
-  ];
+  const headers = useRecoilValue(header) //헤더목록
+    
 
-  const [items, setItems] = useState([
-    {
-      division: "리서치",
-      name: "프로젝트 A",
-      client: "고객사 A",
-      startDate: "2020.01.03",
-      term: "90일",
-      progress: "45%",
-      manager: "박진형",
-      issue: "2개",
-      issues: [
-        { id: 1, title: "UI 개선 필요1", status: "진행 중", description: "UI를 좀 더 깔끔하게 개선해야 합니다." },
-        { id: 2, title: "UI 개선 필요2", status: "완료", description: "API 응답 속도를 개선 완료하였습니다." },
-      ],
-    },
-  ]);
+  const [items, setItems] = useRecoilState(project); //프로젝트 데이터
 
-  const workers = ["홍길동", "김철수", "이영희", "박진형"]; // 작업자 명단
+  const workers = useRecoilValue(workersState) // 작업자 명단
 
-  const processedItems = items.map((item) => ({
+  const processedItems = items.map((item) => ({ //이슈 갯수계산
     ...item,
     issue: `${item.issues.length}개`,
   }));
@@ -49,7 +28,15 @@ function App() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
-  const [issueModalMode, setIssueModalMode] = useState("edit"); // "edit" 또는 "add"
+  const [issueModalMode, setIssueModalMode] = useState("edit"); 
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [newProject, setNewProject] = useState({
+    id: null,
+    name: "",
+    manager: "",
+    startDate: "",
+    issues: [],
+  });
 
   // 프로젝트 모달 열기/닫기
   const openModal = (project) => {
@@ -68,11 +55,15 @@ function App() {
     setIssueModalMode(mode);
     setIsSecondModalOpen(true);
   };
-
   const closeIssueModal = () => {
     setSelectedIssue(null);
     setIsSecondModalOpen(false);
   };
+
+
+  // 프로젝트 모달 열기/닫기
+  const openProjectModal = () => setIsProjectModalOpen(true);
+  const closeProjectModal = () => setIsProjectModalOpen(false);
 
   // 이슈 수정
   const updateIssue = (updatedIssue) => {
@@ -98,6 +89,14 @@ function App() {
     }));
   };
 
+   // 프로젝트 등록
+   const handleAddProject = () => {
+    const newId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
+    setItems([...items, { ...newProject, id: newId }]);
+    closeProjectModal();
+  };
+
+
   // 이슈 등록
   const addIssue = (newIssue) => {
     setItems((prevItems) =>
@@ -120,9 +119,24 @@ function App() {
 
   return (
     <div className="app">
+       <button onClick={openProjectModal} className="add-project-button">
+        프로젝트 등록
+      </button>
+
       {/* 프로젝트 테이블 */}
       <DataTable headers={headers} items={processedItems} onRowClick={openModal} />
-      <GraphTable items={items} calculateActiveMonths={calculateActiveMonths} />
+      <GraphTable items={items} calculateMonths={calculateMonths} />
+
+       {/* 프로젝트 등록 모달 */}
+       <ProjectAddModal
+         isOpen={isProjectModalOpen}
+        workers={workers}
+        newProject={newProject}
+        onClose={closeProjectModal}
+        onChange={setNewProject}
+        onSubmit={handleAddProject}
+      />
+
 
       {/* 프로젝트 모달 */}
       {isModalOpen && (
@@ -136,18 +150,24 @@ function App() {
 
       {/* 이슈 모달 */}
       {isSecondModalOpen && (
-        <IssueModal
-          issue={selectedIssue}
-          mode={issueModalMode} // "edit" 또는 "add"
-          workers={workers}
-          onClose={closeIssueModal}
-          onSave={(issue) => {
-            issueModalMode === "edit"
-              ? updateIssue(issue)
-              : addIssue({ ...issue, id: Date.now() }); // 새 이슈는 ID 자동 생성
-            closeIssueModal();
-          }}
-        />
+         <IssueModal
+         issue={selectedIssue}
+         mode={issueModalMode} 
+         workers={workers}
+         onClose={closeIssueModal}
+         onSave={(issue) => {
+            const lastIssueId =
+              selectedProject?.issues?.slice(-1)[0]?.id || 0; // 마지막 이슈 ID
+            const newId = lastIssueId + 1; // 새로운 이슈 ID
+     
+           if (issueModalMode === "edit") {
+             updateIssue(issue);
+           } else {
+             addIssue({ ...issue, id: newId }); 
+           }
+           closeIssueModal();
+         }}
+       />
       )}
     </div>
   );

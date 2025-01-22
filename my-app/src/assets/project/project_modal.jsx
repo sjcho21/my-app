@@ -20,7 +20,7 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
             </li>
           </ul>
           <h3>이슈</h3>
-            <button onClick={() => onAddIssue()}>이슈 등록</button>
+            <button className="add-button" onClick={() => onAddIssue()}>이슈 등록</button>
             <table className="issues-table">
             <thead>
                 <tr>
@@ -31,7 +31,7 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
             </thead>
             <tbody>
                 {project.issues.map((issue) => (
-                <tr key={issue.id} onClick={() => onIssueClick(issue, "view")} className="clickable">
+                <tr key={issue.id} onClick={() => onIssueClick(issue)} className="clickable">
                     <td>{issue.id}</td>
                     <td>{issue.title}</td>
                     <td>{issue.status}</td>
