@@ -119,12 +119,11 @@ function App() {
 
   return (
     <div className="app">
-       <button onClick={openProjectModal} className="add-project-button">
-        프로젝트 등록
-      </button>
-
       {/* 프로젝트 테이블 */}
       <DataTable headers={headers} items={processedItems} onRowClick={openModal} />
+      <button onClick={openProjectModal} className="add-project-button">
+        PJT 등록
+      </button>
       <GraphTable items={items} calculateMonths={calculateMonths} />
 
        {/* 프로젝트 등록 모달 */}
@@ -136,7 +135,6 @@ function App() {
         onChange={setNewProject}
         onSubmit={handleAddProject}
       />
-
 
       {/* 프로젝트 모달 */}
       {isModalOpen && (

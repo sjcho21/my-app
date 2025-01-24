@@ -15,10 +15,21 @@ export const header = atom({
   ]
 });
 
+//담당자 목록
+export const managersState = atom({
+  key: 'managersState',
+  default: ['메니져1', '메니져2', '메니져3', '메니져4']
+});
+
 //작업자 목록
 export const workersState = atom({
-  key: 'workersState',
-  default: ['홍길동', '김철수', '이영희', '박진형'], // 작업자 목록
+  key: "workersState",
+  default: [
+    { name: "홍길동", startDate: "2025-01-10", endDate: "2025-01-20" },
+    { name: "박지현", startDate: "2025-01-15", endDate: "2025-01-25" },
+    { name: "김철수", startDate: "", endDate: "" }, 
+    { name: "이영희", startDate: "2025-01-05", endDate: "2025-01-12" },
+  ],
 });
 
 
@@ -31,7 +42,7 @@ export const project = atom({
       name: "프로젝트 A",
       client: "고객사 A",
       startDate: "2020.01.03",
-      term: "90일",
+      term: "90",
       progress: "45%",
       manager: "박진형",
       issues: [
@@ -45,7 +56,7 @@ export const project = atom({
       name: "프로젝트 B",
       client: "고객사 B",
       startDate: "2020.04.03",
-      term: "120일",
+      term: "120",
       progress: "45%",
       manager: "박진형",
       issues: [

@@ -126,3 +126,6 @@ td {
   left: calc(50% + 300px);
 }
 
+.add-project-button {
+  height: max-content;
+}

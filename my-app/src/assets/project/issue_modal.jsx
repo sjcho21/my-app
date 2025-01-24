@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 
-function IssueModal({ issue, workers, unavailableWorkers, onClose, onSave, mode }) {
+function IssueModal({ issue, workers, onClose, onSave, mode }) {
   const isEditMode = !!issue; // issue가 있으면 수정 모드
   const [editedIssue, setEditedIssue] = useState(
-    issue || { title: "", status: "", description: "", worker: "", startDate: "", days: 0, endDate: "" }
+    issue || { title: "", status: "", description: "", worker: "", startDate: "", days: 0, endDate: "", actRate: "", expRate: "" }
   );
   const [isEditable, setIsEditable] = useState(mode === "add");
+  const [availableWorkers, setAvailableWorkers] = useState(workers || []);
 
-  // 작업 종료일 계산
+  // 작업 종료일 계산 USEFFECT 사용하여 렌더링 될때다마 계산
   useEffect(() => {
     if (editedIssue.startDate && editedIssue.days > 0) {
       const startDate = new Date(editedIssue.startDate);
@@ -16,6 +17,27 @@ function IssueModal({ issue, workers, unavailableWorkers, onClose, onSave, mode 
       setEditedIssue((prev) => ({ ...prev, endDate: endDate.toISOString().split("T")[0] }));
     }
   }, [editedIssue.startDate, editedIssue.days]);
+
+  // 사용 가능한 작업자 필터링
+  useEffect(() => {
+    if (editedIssue.startDate && editedIssue.endDate) {
+      const issueStart = new Date(editedIssue.startDate);
+      const issueEnd = new Date(editedIssue.endDate);
+
+      const filteredWorkers = workers.filter((worker) => {
+        if (!worker.startDate || !worker.endDate) return true; // 작업자 일정이 없으면 포함
+        const workerStart = new Date(worker.startDate);
+        const workerEnd = new Date(worker.endDate);
+
+        // 일정 겹치지 않는 경우만 포함
+        return workerEnd < issueStart || workerStart > issueEnd;
+      });
+
+      setAvailableWorkers(filteredWorkers);
+    } else {
+      setAvailableWorkers([]);
+    }
+  }, [editedIssue.startDate, editedIssue.endDate, workers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,20 +101,20 @@ function IssueModal({ issue, workers, unavailableWorkers, onClose, onSave, mode 
           <p>
             <strong>작업자:</strong>
             <select
-            name="worker"
-            value={editedIssue.worker}
-            onChange={handleChange}
-            disabled={!isEditable}
-          >
-            <option value="" disabled>
-              작업자 선택
-            </option>
-            {(Array.isArray(workers) ? workers : []).map((worker, index) => (
-              <option key={index} value={worker}>
-                {worker}
+              name="worker"
+              value={editedIssue.worker}
+              onChange={handleChange}
+              disabled={!isEditable || availableWorkers.length === 0}
+            >
+              <option value="" disabled>
+                작업자 선택
               </option>
-            ))}
-          </select>
+              {availableWorkers.map((worker, index) => (
+                <option key={index} value={worker.name}>
+                  {worker.name}
+                </option>
+              ))}
+            </select>
           </p>
           <p>
             <strong>작업 시작일:</strong>
@@ -125,6 +147,29 @@ function IssueModal({ issue, workers, unavailableWorkers, onClose, onSave, mode 
               readOnly
               placeholder="자동 계산됨"
               disabled
+            />
+          </p>
+          <p>
+            <strong>예상 진척룰:</strong>
+            <input
+              type="text"
+              name="expRate"
+              value={editedIssue.expRate}
+              readOnly
+              placeholder="자동 계산됨"
+              disabled
+            />
+          </p>
+          <p>
+            <strong>실제 진척률:</strong>
+            <input
+              type="number"
+              name="actRate"
+              value={editedIssue.actRate}
+              onChange={handleChange}
+              placeholder="예상 진척률 입력"
+              min="1"
+              disabled={!isEditable}
             />
           </p>
           <div className="modal-footer">
