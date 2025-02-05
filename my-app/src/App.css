@@ -1,25 +1,15 @@
 #root {
-  max-width: 1280px;
+  max-width: 1450px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
 .app {
   display: flex;
-  gap: 20px;
 }
 
 table {
-  width: 100%;
   border-collapse: collapse;
 }
 
@@ -28,14 +18,6 @@ td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
-}
-
-.data-table {
-  width: 50%;
-}
-
-.graph-table {
-  width: 50%;
 }
 
 .graph-table td.active {
@@ -47,7 +29,6 @@ td {
 }
 
 .data-table {
-  width: 100%;
   border-collapse: collapse;
 }
 
@@ -64,6 +45,10 @@ td {
 
 .data-table tr.clickable:hover {
   background-color: #f1f1f1;
+}
+
+.issues-table {
+  width: 100%;
 }
 
 /**프로젝트 모달**/
@@ -108,8 +93,8 @@ td {
 
 .close-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  right: 0px;
+  bottom: 15px;
   background: none;
   border: none;
   font-size: 20px;
@@ -120,6 +105,7 @@ td {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  position: relative;
 }
 
 .second-modal{
@@ -128,4 +114,116 @@ td {
 
 .add-project-button {
   height: max-content;
+  margin-right: 10px;
+  border: 1px solid #ddd;
+}
+
+/* 각 필드 세트 */
+.pjt-field {
+  display: flex;
+  align-items: center;
+  gap: 120px;
+  flex-wrap: wrap;
+
+}
+
+/* 레이블 스타일 */
+.pjt-field label {
+  min-width: 120px;
+  font-weight: bold;
+}
+
+.pjt-field input,
+.pjt-field select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.modal-body div {
+  display: flex;
+}
+
+/* 모달 본문 스타일 */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 필드 스타일 */
+.issue-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.issue-field strong {
+  min-width: 120px;
+  font-weight: bold;
+}
+
+.issue-field input,
+.issue-field select,
+.issue-field textarea {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.issue-field textarea {
+  resize: vertical;
+  height: 80px;
+}
+
+/* 비활성화된 필드 스타일 */
+input[disabled],
+select[disabled] {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* 모달 하단 버튼 */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-footer button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal-footer button:last-child {
+  background-color: #6c757d;
+}
+
+.modal-footer button:hover {
+  background-color: #0056b3;
+}
+
+.modal-footer button:last-child:hover {
+  background-color: #5a6268;
 }

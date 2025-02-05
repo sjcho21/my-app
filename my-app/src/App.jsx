@@ -122,7 +122,7 @@ function App() {
       {/* 프로젝트 테이블 */}
       <DataTable headers={headers} items={processedItems} onRowClick={openModal} />
       <button onClick={openProjectModal} className="add-project-button">
-        PJT 등록
+        +
       </button>
       <GraphTable items={items} calculateMonths={calculateMonths} />
 
@@ -141,8 +141,8 @@ function App() {
         <ProjectModal
           project={selectedProject}
           onClose={closeModal}
-          onIssueClick={(issue) => openIssueModal(issue, "edit")} // 수정 모드
-          onAddIssue={() => openIssueModal(null, "add")} // 등록 모드
+          onIssueClick={(issue) => openIssueModal(issue, "edit")} // 이슈 수정
+          onAddIssue={() => openIssueModal(null, "add")} // 이슈 등록
         />
       )}
 
