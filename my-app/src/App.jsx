@@ -62,9 +62,34 @@ function App() {
 
 
   // 프로젝트 모달 열기/닫기
-  const openProjectModal = () => setIsProjectModalOpen(true);
-  const closeProjectModal = () => setIsProjectModalOpen(false);
-
+  const openProjectModal = () => {
+    setNewProject({
+      id: null,
+      division: "",
+      name: "",
+      client: "",
+      manager: "",
+      startDate: "",
+      term: "",
+      issues: [],
+    }); 
+    setIsProjectModalOpen(true);
+  };
+  
+  const closeProjectModal = () => {
+    setNewProject({
+      id: null,
+      division: "",
+      name: "",
+      client: "",
+      manager: "",
+      startDate: "",
+      term: "",
+      issues: [],
+    }); 
+    setIsProjectModalOpen(false);
+  };
+  
   // 이슈 수정
   const updateIssue = (updatedIssue) => {
     setItems((prevItems) =>
@@ -91,6 +116,31 @@ function App() {
 
    // 프로젝트 등록
    const handleAddProject = () => {
+
+    if (!newProject.division) {
+      alert("프로젝트 구분을 입력해 주세요.");
+      return;
+    }
+    if (!newProject.name) {
+      alert("프로젝트 이름을 입력해 주세요.");
+      return;
+    }
+    if (!newProject.client) {
+      alert("거래처를 입력해 주세요.");
+      return;
+    }
+    if (!newProject.manager) {
+      alert("담당자를 입력해 주세요.");
+      return;
+    }
+    if (!newProject.startDate) {
+      alert("시작일을 입력해 주세요.");
+      return;
+    }
+    if (!newProject.term) {
+      alert("투입기간을 입력해 주세요.");
+      return;
+    }
     const newId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
     setItems([...items, { ...newProject, id: newId }]);
     closeProjectModal();

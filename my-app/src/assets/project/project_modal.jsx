@@ -27,6 +27,7 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
                 <th>이슈 ID</th>
                 <th>제목</th>
                 <th>상태</th>
+                <th>작업자</th>
                 </tr>
             </thead>
             <tbody>
@@ -35,6 +36,7 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
                     <td>{issue.id}</td>
                     <td>{issue.title}</td>
                     <td>{issue.status}</td>
+                    <td>{issue.worker}</td>
                 </tr>
                 ))}
             </tbody>

@@ -118,6 +118,7 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
             <strong>제목:</strong>
             <input
               name="title"
+              autoComplete="off" 
               value={editedIssue.title}
               onChange={handleChange}
               placeholder="이슈 제목 입력"

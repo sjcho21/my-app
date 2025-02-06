@@ -21,6 +21,7 @@ function ProjectAddModal({
           <label>구분</label>
           <input
             type="text"
+            autoComplete="off" 
             value={newProject.division}
             onChange={(e) => onChange({ ...newProject, division: e.target.value })}
           />
@@ -71,6 +72,18 @@ function ProjectAddModal({
             }
           />
         </div>
+        <div className="pjt-field">
+          <label>진행률 (%)</label>
+          <input
+              type="number"
+              value={newProject.progress}
+              min="1"
+              max="100"
+              onChange={(e) =>
+                onChange({ ...newProject, progress: e.target.value })
+              }
+            />
+        </div>    
         <div className="pjt-field">
           <label>투입기간(MD)</label>
           <input
