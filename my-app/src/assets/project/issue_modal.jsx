@@ -47,8 +47,8 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
       const today = new Date();
 
       if (today >= startDate && today <= endDate) {
-        const totalDuration = endDate - startDate; // 전체 기간 
-        const elapsed = today - startDate; // 경과 기간 
+        const totalDuration = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1일 추가 (끝나는 날 포함)
+        const elapsed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1일 추가 (시작일 포함)
         const progress = Math.floor((elapsed / totalDuration) * 100);
         setEditedIssue((prev) => ({
           ...prev,
@@ -118,7 +118,6 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
             <strong>제목:</strong>
             <input
               name="title"
-              autoComplete="off" 
               value={editedIssue.title}
               onChange={handleChange}
               placeholder="이슈 제목 입력"

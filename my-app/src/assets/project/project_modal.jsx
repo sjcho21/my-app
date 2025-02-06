@@ -18,6 +18,9 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
             <li>
               <strong>시작일:</strong> {project.startDate}
             </li>
+            <li>
+              <strong>종료일:</strong> {project.endDate}
+            </li>
           </ul>
           <h3>이슈</h3>
             <button className="add-button" onClick={() => onAddIssue()}>이슈 등록</button>

@@ -61,18 +61,6 @@ function ProjectAddModal({
           </select>
         </div>
         <div className="pjt-field">
-          <label>시작일</label>
-          <input
-            type="date"
-            min="2025-01-01"
-            max="2025-12-31"
-            value={newProject.startDate}
-            onChange={(e) =>
-              onChange({ ...newProject, startDate: e.target.value })
-            }
-          />
-        </div>
-        <div className="pjt-field">
           <label>진행률 (%)</label>
           <input
               type="number"

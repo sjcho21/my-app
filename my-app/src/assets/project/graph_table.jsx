@@ -13,7 +13,7 @@ function GraphTable({ items, calculateMonths }) {
       </thead>
       <tbody>
         {items.map((item, index) => {
-          const { startMonth, endMonth } = calculateMonths(item.startDate, item.term);
+          const { startMonth, endMonth } = calculateMonths(item.startDate, item.endDate);
           return (
             <tr key={index}>
               <td>{item.name}</td>
