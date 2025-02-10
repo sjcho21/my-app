@@ -14,15 +14,22 @@ import "./App.css";
 function App() {
   const headers = useRecoilValue(header) //헤더목록
     
-
   const [items, setItems] = useRecoilState(project); //프로젝트 데이터
 
   const workers = useRecoilValue(workersState) // 작업자 명단
 
-  const processedItems = items.map((item) => ({ //이슈 갯수계산
-    ...item,
-    issue: `${item.issues.length}개`,
-  }));
+  const processedItems = items.map((item) => {
+    const totalDays = item.issues.reduce((sum, issue) => {
+      const days = Number(issue.days) || 0; 
+      return sum + days;
+    }, 0);
+  
+    return {
+      ...item,
+      issue: `${item.issues.length}개`, // 이슈 개수
+      term: totalDays, // days 기준으로 term 표시
+    };
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -90,84 +97,73 @@ function App() {
     setIsProjectModalOpen(false);
   };
   
- // 전체 진행률 계산 함수
-const calculateOverallProgress = (issues) => {
-  if (issues.length === 0) return 0; // 이슈가 없으면 진행률은 0
-
-  const totalProgress = issues.reduce((total, issue) => total + issue.expRate, 0);
-  return Math.floor(totalProgress / issues.length); // 이슈들의 평균 진행률
-};
-
-// 이슈 추가/수정 후 프로젝트의 전체 진행 상황을 업데이트하는 함수
-const updateProjectProgress = (updatedIssues) => {
-  const overallProgress = calculateOverallProgress(updatedIssues);
-  
+  // 이슈 수정
+const updateIssue = (updatedIssue) => {
   setItems((prevItems) =>
     prevItems.map((item) => {
       if (item.name === selectedProject.name) {
+        const updatedIssues = item.issues.map((issue) =>
+          issue.id === updatedIssue.id ? updatedIssue : issue
+        );
+
+        // 새로운 시작 날짜 계산
+        const updatedStartDate = updatedIssues
+          .map((issue) => new Date(issue.startDate))
+          .reduce((earliest, current) => (current < earliest ? current : earliest))
+          .toISOString()
+          .split("T")[0];
+        
+        // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
+        const updatedEndDate = updatedIssues
+          .map((issue) => new Date(issue.endDate))
+          .reduce((latest, current) => (current > latest ? current : latest))
+          .toISOString()
+          .split("T")[0];
+        
+          const totalDays = updatedIssues.reduce((sum, issue) => {
+            const days = parseInt(issue.days, 10) || 0; // 'days'를 숫자로 변환
+            return sum + days; // 숫자 합산
+          }, 0);
+
         return {
           ...item,
           issues: updatedIssues,
-          progress: overallProgress, // 전체 진행률 업데이트
+          startDate: updatedStartDate,
+          endDate: updatedEndDate,
+          term: totalDays
         };
       }
       return item;
     })
   );
 
-  // 선택된 프로젝트에도 진행률 업데이트
-  setSelectedProject((prevProject) => ({
-    ...prevProject,
-    issues: updatedIssues,
-    progress: overallProgress, // 전체 진행률 업데이트
-  }));
-};
+  // 프로젝트 모달도 업데이트
+  setSelectedProject((prevProject) => {
+    const updatedIssues = prevProject.issues.map((issue) =>
+      issue.id === updatedIssue.id ? updatedIssue : issue
+    );
+    const updatedStartDate = updatedIssues
+      .map((issue) => new Date(issue.startDate))
+      .reduce((earliest, current) => (current < earliest ? current : earliest))
+      .toISOString()
+      .split("T")[0];
 
-// 이슈 수정
-const updateIssue = (updatedIssue) => {
-  const updatedItems = items.map((item) => {
-    if (item.name === selectedProject.name) {
-      const updatedIssues = item.issues.map((issue) =>
-        issue.id === updatedIssue.id ? updatedIssue : issue
-      );
+    // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
+    const updatedEndDate = updatedIssues
+    .map((issue) => new Date(issue.endDate))
+    .reduce((latest, current) => (current > latest ? current : latest))
+    .toISOString()
+    .split("T")[0];
 
-      // 새로운 시작일과 종료일 계산
-      const updatedStartDate = updatedIssues
-        .map((issue) => new Date(issue.startDate))
-        .reduce((earliest, current) => (current < earliest ? current : earliest))
-        .toISOString()
-        .split("T")[0];
-
-      const updatedEndDate = updatedIssues
-        .map((issue) => new Date(issue.endDate))
-        .reduce((latest, current) => (current > latest ? current : latest))
-        .toISOString()
-        .split("T")[0];
-
-      const overallProgress = calculateOverallProgress(updatedIssues); // 전체 진행률 계산
-
-      return {
-        ...item,
-        issues: updatedIssues,
-        startDate: updatedStartDate,
-        endDate: updatedEndDate,
-        progress: overallProgress, // 전체 진행률 업데이트
-      };
-    }
-    return item;
+    return {
+      ...item,
+      issues: updatedIssues,
+      startDate: updatedStartDate,
+      endDate: updatedEndDate,
+    };
   });
-
-  // Recoil 상태 업데이트
-  setItems(updatedItems);
-
-  // 프로젝트 모달에서도 진행률 업데이트
-  const updatedSelectedProject = {
-    ...selectedProject,
-    issues: updatedItems.find(item => item.name === selectedProject.name)?.issues || [],
-    progress: updatedItems.find(item => item.name === selectedProject.name)?.progress || 0
-  };
-  setSelectedProject(updatedSelectedProject);
 };
+
    // 프로젝트 등록
    const handleAddProject = () => {
 
@@ -197,49 +193,71 @@ const updateIssue = (updatedIssue) => {
   };
 
 
- // 이슈 추가
-const addIssue = (newIssue) => {
-  const updatedItems = items.map((item) => {
-    if (item.name === selectedProject.name) {
-      const updatedIssues = [...item.issues, newIssue];
+  // 이슈 등록
+  const addIssue = (newIssue) => {
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.name === selectedProject.name) {
+        const updatedIssues = [...item.issues, newIssue];
 
-      // 새로운 시작일과 종료일 계산
-      const updatedStartDate = updatedIssues
+        // 새로운 시작 날짜 계산
+        const updatedStartDate = updatedIssues
         .map((issue) => new Date(issue.startDate))
         .reduce((earliest, current) => (current < earliest ? current : earliest))
         .toISOString()
         .split("T")[0];
-
-      const updatedEndDate = updatedIssues
+      
+        // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
+        const updatedEndDate = updatedIssues
         .map((issue) => new Date(issue.endDate))
         .reduce((latest, current) => (current > latest ? current : latest))
         .toISOString()
         .split("T")[0];
 
-      const overallProgress = calculateOverallProgress(updatedIssues); // 전체 진행률 계산
+        const totalDays = updatedIssues.reduce((sum, issue) => {
+          const days = parseInt(issue.days, 10) || 0; // 'days'를 숫자로 변환
+          return sum + days; // 숫자 합산
+        }, 0);
+
+        return {
+          ...item,
+          issues: updatedIssues,
+          startDate: updatedStartDate,
+          endDate: updatedEndDate,
+          term: totalDays
+        };
+      }
+        return item;
+      })
+    );
+
+    // 프로젝트 모달도 업데이트
+    setSelectedProject((prevProject) => {
+      const updatedIssues = [...prevProject.issues, newIssue];
+
+      //새로운 날짜 계산
+      const updatedStartDate = updatedIssues
+        .map((issue) => new Date(issue.startDate))
+        .reduce((earliest, current) => (current < earliest ? current : earliest))
+        .toISOString()
+        .split("T")[0];
+      
+       // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
+       const updatedEndDate = updatedIssues
+       .map((issue) => new Date(issue.endDate))
+       .reduce((latest, current) => (current > latest ? current : latest))
+       .toISOString()
+       .split("T")[0];  
+          
 
       return {
-        ...item,
+        ...prevProject,
         issues: updatedIssues,
         startDate: updatedStartDate,
-        endDate: updatedEndDate,
-        progress: overallProgress, // 전체 진행률 업데이트
+        endDate: updatedEndDate
       };
-    }
-    return item;
-  });
-
-  // Recoil 상태 업데이트
-  setItems(updatedItems);
-
-  // 프로젝트 모달에서도 진행률 업데이트
-  const updatedSelectedProject = {
-    ...selectedProject,
-    issues: updatedItems.find(item => item.name === selectedProject.name)?.issues || [],
-    progress: updatedItems.find(item => item.name === selectedProject.name)?.progress || 0
+    });
   };
-  setSelectedProject(updatedSelectedProject);
-};
 
   return (
     <div className="app">

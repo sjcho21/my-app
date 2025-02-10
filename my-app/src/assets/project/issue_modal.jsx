@@ -43,7 +43,7 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
   }, [editedIssue.startDate, editedIssue.endDate, workersState]);
 
    // workerId에 해당하는 workerName을 찾기
-  useEffect(() => {
+   useEffect(() => {
     if (editedIssue.workerId) {
       const worker = availableWorkers.find((worker) => worker.id === editedIssue.workerId);
       if (worker) {
@@ -83,31 +83,51 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
   };
 
   const handleSave = () => {
-    if (!editedIssue.title.trim()) { alert("제목을 입력해주세요."); return; }
-    if (!editedIssue.status) { alert("상태를 선택해주세요."); return; }
-    if (!editedIssue.description.trim()) { alert("설명을 입력해주세요."); return; }
-    if (!editedIssue.workerId) { alert("작업자를 선택해주세요."); return; }
-    if (!editedIssue.startDate) { alert("작업 시작일을 선택해주세요."); return; }
-    if (!editedIssue.days || editedIssue.days <= 0) { alert("작업 기간을 입력해주세요 (1 이상)."); return; }
+    if (!editedIssue.title.trim()) { 
+      alert("제목을 입력해주세요."); 
+      return; 
+    }
+    if (!editedIssue.status) { 
+      alert("상태를 선택해주세요."); 
+      return; 
+    }
+    if (!editedIssue.description.trim()) { 
+      alert("설명을 입력해주세요."); 
+      return; 
+    }
+    if (!editedIssue.workerId) { 
+      alert("작업자를 선택해주세요."); 
+      return; 
+    }
+    if (!editedIssue.startDate) { 
+      alert("작업 시작일을 선택해주세요."); 
+      return; 
+    }
+    if (!editedIssue.days || editedIssue.days <= 0) { 
+      alert("작업 기간을 입력해주세요 (1 이상)."); 
+      return; 
+    }
   
+    // 이슈 추가 시, 작업자의 periods에 projectId와 기간 추가
     setWorkerState((prevWorkers) =>
       prevWorkers.map((worker) => {
         if (worker.id === editedIssue.workerId) {
           const newPeriod = {
+            projectId: editedIssue.projectId, // projectId 추가
             startDate: editedIssue.startDate,
             endDate: editedIssue.endDate,
           };
           return {
             ...worker,
-            periods: [...worker.periods, newPeriod],
+            periods: [...worker.periods, newPeriod], // 새 기간 추가
           };
         }
         return worker;
       })
     );
-
-    onSave(editedIssue);
-    onClose();
+  
+    onSave(editedIssue); // 이슈 저장
+    onClose(); // 모달 닫기
   };
 
   const handleEditClick = () => {

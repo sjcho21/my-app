@@ -11,7 +11,7 @@ export const header = atom({
     { text: "투입기간 (MD)", value: "term" },
     { text: "진행률 (%)", value: "progress" },
     { text: "담당자", value: "manager" },
-    { text: "이슈", value: "issue" },
+    { text: "이슈", value: "issue" },a
   ]
 });
 
@@ -42,7 +42,7 @@ export const project = atom({
       name: "프로젝트 A",
       client: "고객사 A",
       term: "90",
-      manager: "매니져A",
+      manager: "박진형",
       issues: [ ],
     },
     {
@@ -50,7 +50,7 @@ export const project = atom({
       name: "프로젝트 B",
       client: "고객사 B",
       term: "120",
-      manager: "매니져B",
+      manager: "김철수",
       issues: [ ],
     },
   ],
