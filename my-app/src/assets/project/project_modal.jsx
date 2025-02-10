@@ -39,7 +39,7 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
                     <td>{issue.id}</td>
                     <td>{issue.title}</td>
                     <td>{issue.status}</td>
-                    <td>{issue.worker}</td>
+                    <td>{issue.workerName}</td>
                 </tr>
                 ))}
             </tbody>

@@ -25,10 +25,10 @@ export const managersState = atom({
 export const workersState = atom({
   key: "workersState",
   default: [
-    { name: "홍길동", startDate: "2025-02-02", endDate: "2025-02-05" },
-    { name: "박지현", startDate: "2025-02-15", endDate: "2025-02-25" },
-    { name: "김철수", startDate: "", endDate: "" },  //할당된 프로젝트가 없음
-    { name: "이영희", startDate: "2025-02-01", endDate: "2025-02-12" },
+    { id: 1, name: "홍길동", periods: [{ startDate: "2025-02-02", endDate: "2025-02-05" }] },
+    { id: 2, name: "박지현", periods: [{ startDate: "2025-02-15", endDate: "2025-02-25" }] },
+    { id: 3, name: "김철수", periods: [] }, // 할당된 프로젝트가 없음
+    { id: 4, name: "이영희", periods: [{ startDate: "2025-02-01", endDate: "2025-02-12" }] },
   ],
 });
 
@@ -42,8 +42,7 @@ export const project = atom({
       name: "프로젝트 A",
       client: "고객사 A",
       term: "90",
-      progress: "24",
-      manager: "박진형",
+      manager: "매니져A",
       issues: [ ],
     },
     {
@@ -51,8 +50,7 @@ export const project = atom({
       name: "프로젝트 B",
       client: "고객사 B",
       term: "120",
-      progress: "45",
-      manager: "박진형",
+      manager: "매니져B",
       issues: [ ],
     },
   ],
