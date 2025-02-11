@@ -127,8 +127,8 @@ const updateIssue = (updatedIssue) => {
           .split("T")[0];
         
           const totalDays = updatedIssues.reduce((sum, issue) => {
-            const days = parseInt(issue.days, 10) || 0; // 'days'를 숫자로 변환
-            return sum + days; // 숫자 합산
+            const days = parseInt(issue.days, 10) || 0; 
+            return sum + days; 
           }, 0);
 
         const overallProgress = calculateOverallProgress(updatedIssues);
@@ -165,7 +165,7 @@ const updateIssue = (updatedIssue) => {
     .split("T")[0];
 
     return {
-      ...items,
+      ...prevProject,
       issues: updatedIssues,
       startDate: updatedStartDate,
       endDate: updatedEndDate,
@@ -190,10 +190,6 @@ const updateIssue = (updatedIssue) => {
     }
     if (!newProject.manager) {
       alert("담당자를 입력해 주세요.");
-      return;
-    }
-    if (!newProject.term) {
-      alert("투입기간을 입력해 주세요.");
       return;
     }
     const newId = items.length > 0 ? items[items.length - 1].id + 1 : 1;

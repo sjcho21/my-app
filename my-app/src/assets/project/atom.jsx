@@ -42,7 +42,7 @@ export const project = atom({
       name: "프로젝트 A",
       client: "고객사 A",
       term: "90",
-      manager: "박진형",
+      manager: "매니져2",
       issues: [ ],
     },
     {
@@ -50,7 +50,7 @@ export const project = atom({
       name: "프로젝트 B",
       client: "고객사 B",
       term: "120",
-      manager: "김철수",
+      manager: "매니져4",
       issues: [ ],
     },
   ],

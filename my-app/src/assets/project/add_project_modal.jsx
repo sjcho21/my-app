@@ -60,18 +60,6 @@ function ProjectAddModal({
             ))}
           </select>
         </div>
-        <div className="pjt-field">
-          <label>진행률 (%)</label>
-          <input
-              type="number"
-              value={newProject.progress}
-              min="1"
-              max="100"
-              onChange={(e) =>
-                onChange({ ...newProject, progress: e.target.value })
-              }
-            />
-        </div>    
         <div className="modal-footer">
           <button onClick={onSubmit}>등록</button>
           <button onClick={onClose}>취소</button>
