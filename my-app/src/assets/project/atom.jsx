@@ -11,7 +11,7 @@ export const header = atom({
     { text: "투입기간 (MD)", value: "term" },
     { text: "진행률 (%)", value: "progress" },
     { text: "담당자", value: "manager" },
-    { text: "이슈", value: "issue" },a
+    { text: "이슈", value: "issue" }
   ]
 });
 

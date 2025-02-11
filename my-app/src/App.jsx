@@ -31,6 +31,12 @@ function App() {
     };
   });
 
+  const calculateOverallProgress = (issues) => {
+    if (issues.length === 0) return 0; // 이슈가 없으면 진행률은 0
+    const totalProgress = issues.reduce((total, issue) => total + issue.expRate, 0);
+    return Math.floor(totalProgress / issues.length); // 이슈들의 평균 진행률
+  };
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
@@ -125,12 +131,15 @@ const updateIssue = (updatedIssue) => {
             return sum + days; // 숫자 합산
           }, 0);
 
+        const overallProgress = calculateOverallProgress(updatedIssues);
+
         return {
           ...item,
           issues: updatedIssues,
           startDate: updatedStartDate,
           endDate: updatedEndDate,
-          term: totalDays
+          term: totalDays,
+          progress: overallProgress
         };
       }
       return item;
@@ -156,7 +165,7 @@ const updateIssue = (updatedIssue) => {
     .split("T")[0];
 
     return {
-      ...item,
+      ...items,
       issues: updatedIssues,
       startDate: updatedStartDate,
       endDate: updatedEndDate,
@@ -219,12 +228,15 @@ const updateIssue = (updatedIssue) => {
           return sum + days; // 숫자 합산
         }, 0);
 
+        const overallProgress = calculateOverallProgress(updatedIssues);
+
         return {
           ...item,
           issues: updatedIssues,
           startDate: updatedStartDate,
           endDate: updatedEndDate,
-          term: totalDays
+          term: totalDays,
+          progress: overallProgress
         };
       }
         return item;

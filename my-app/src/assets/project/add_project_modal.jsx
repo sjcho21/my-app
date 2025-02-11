@@ -72,16 +72,6 @@ function ProjectAddModal({
               }
             />
         </div>    
-        <div className="pjt-field">
-          <label>투입기간(MD)</label>
-          <input
-            type="number"
-            min="1"
-            max="365"
-            value={newProject.term}
-            onChange={(e) => onChange({ ...newProject, term: e.target.value })}
-          />
-        </div>
         <div className="modal-footer">
           <button onClick={onSubmit}>등록</button>
           <button onClick={onClose}>취소</button>
