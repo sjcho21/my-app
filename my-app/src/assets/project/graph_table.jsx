@@ -41,7 +41,7 @@ function GraphTable({ items, calculateMonths }) {
                 const getCellStyle = () => {
                   if (monthIndex >= startMonth && monthIndex < endMonth) {
                     return {
-                      background: `linear-gradient(to right, green ${greenWidth}%, yellow 0%)`,
+                      background: `linear-gradient(to right, green ${greenWidth}%, darkseagreen 0%)`,
                     };
                   }
                   return { background: "white" }; 

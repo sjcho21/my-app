@@ -20,9 +20,9 @@ td {
   text-align: center;
 }
 
-.graph-table td.active {
+/* .graph-table td.active {
   background-color: #4caf50;
-}
+} */
 
 .graph-table td {
   height: 20px;
