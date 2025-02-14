@@ -1,24 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { workersState as workersAtom} from "./atom";
+import { workersState as workersAtom, issuesState as issuesAtom } from "./atom";
 
-function IssueModal({ issue, workers, onClose, onSave, mode }) {
+function IssueModal({ issue, onClose, onSave, mode, projectId }) {
+
   const [workersState , setWorkerState] = useRecoilState(workersAtom);
+  const [issuesState , setIssuesState] = useRecoilState(issuesAtom);
   const isEditMode = !!issue; // issue가 있으면 수정 모드
   const [editedIssue, setEditedIssue] = useState(
-    issue || { title: "", status: "", description: "", workerId: null, startDate: "", days: 0, endDate: "", actRate: "", expRate: "" }
+    issue || { title: "", status: "", description: "", workerId: null, startDate: "", days: 0, endDate: "", actRate: "", expRate: "", projectId: projectId || ""}
   );
   const [isEditable, setIsEditable] = useState(mode === "add"); //add 일때 true 아니면 false
-  const [availableWorkers, setAvailableWorkers] = useState(workers || []);
+  const [availableWorkers, setAvailableWorkers] = useState([]);
+
+  //현재 이슈
+  const currentIssue = issuesState.find((p) => p.issueId === issue);
+
+  useEffect(() => {
+    if (currentIssue) {
+      setEditedIssue(currentIssue);
+    }
+  }, [currentIssue]); 
 
   // 작업 종료일 계산 USEFFECT 사용하여 렌더링 될때다마 계산
   useEffect(() => {
     if (editedIssue.startDate && editedIssue.days > 0) {
-      const startDate = new Date(editedIssue.startDate);
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + Number(editedIssue.days) - 1);
-      setEditedIssue((prev) => ({ ...prev, endDate: endDate.toISOString().split("T")[0] }));
-    }
+        const startDate = new Date(editedIssue.startDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + Number(editedIssue.days) - 1);
+
+        const calculatedEndDate = endDate.toISOString().split("T")[0]; // 새 종료일 계산
+
+        setEditedIssue((prev) => {
+          if (prev.endDate === calculatedEndDate) {
+            return prev; // ✅ 동일하면 업데이트하지 않음 (불필요한 리렌더링 방지)
+          }
+          return { ...prev, endDate: calculatedEndDate };
+        });
+      }
   }, [editedIssue.startDate, editedIssue.days]);
 
    useEffect(() => {
@@ -36,10 +55,13 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
         });
       });
 
-      setAvailableWorkers(filteredWorkers);
+      setAvailableWorkers((prev) => 
+        JSON.stringify(prev) !== JSON.stringify(filteredWorkers) ? filteredWorkers : prev //기존 작업가증자 명단 과 새로운 작업가능자 명단 비교
+      );
     } else {
-      setAvailableWorkers([]);
+      setAvailableWorkers((prev) => (prev.length !== 0 ? [] : prev)); // 다를 경우만 setState 호출
     }
+
   }, [editedIssue.startDate, editedIssue.endDate, workersState]);
 
    // workerId에 해당하는 workerName을 찾기
@@ -55,27 +77,39 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
   // 실제 진척률 계산
   useEffect(() => {
     if (editedIssue.startDate && editedIssue.endDate) {
+      // 날짜 객체 생성 후 시간 제거 (00:00:00)
       const startDate = new Date(editedIssue.startDate);
+      startDate.setHours(0, 0, 0, 0);
+  
       const endDate = new Date(editedIssue.endDate);
+      endDate.setHours(0, 0, 0, 0);
+  
       const today = new Date();
-
-      if (today >= startDate && today <= endDate) {
-        const totalDuration = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1일 추가 (끝나는 날 포함)
-        const elapsed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1일 추가 (시작일 포함)
-        const progress = Math.floor((elapsed / totalDuration) * 100);
-        setEditedIssue((prev) => ({
-          ...prev,
-          expRate: progress > 100 ? 100 : progress < 0 ? 0 : progress,
-        }));
-      } else if (today < startDate) {
-        // 현재 날짜가 시작일 이전인 경우
-        setEditedIssue((prev) => ({ ...prev, expRate: 0 }));
-      } else if (today > endDate) {
-        // 현재 날짜가 종료일 이후인 경우
-        setEditedIssue((prev) => ({ ...prev, expRate: 100 }));
+      today.setHours(0, 0, 0, 0);
+  
+      // 전체 기간 계산 (마지막 날 포함)
+      const totalDuration = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  
+      if (totalDuration > 0) {
+        if (today >= startDate && today <= endDate) {
+          // 현재까지의 경과 기간 계산 (시작일 포함)
+          const elapsed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+          const progress = Math.floor((elapsed / totalDuration) * 100);
+  
+          setEditedIssue((prev) => ({
+            ...prev,
+            expRate: Math.min(Math.max(progress, 0), 100), // 0~100 사이 값으로 조정
+          }));
+        } else if (today < startDate) {
+          // 현재 날짜가 시작일 이전인 경우
+          setEditedIssue((prev) => ({ ...prev, expRate: 0 }));
+        } else if (today > endDate) {
+          // 현재 날짜가 종료일 이후인 경우
+          setEditedIssue((prev) => ({ ...prev, expRate: 100 }));
+        }
       }
     }
-  }, [editedIssue.startDate, editedIssue.endDate]); //startDate 와 endDate가 변하지 않으면 useEffect 실행x
+  }, [editedIssue.startDate, editedIssue.endDate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -108,28 +142,61 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
       return; 
     }
   
-    // 이슈 추가 시, 작업자의 periods에 projectId와 기간 추가
+    // 새로운 issueId 생성 (추가 모드일 경우)
+    const newIssueId =
+      issuesState.length > 0
+        ? Math.max(...issuesState.map((issue) => issue.issueId)) + 1
+        : 1;
+  
+    const newIssue = isEditMode
+      ? { ...editedIssue } // 수정 모드: 기존 값 유지
+      : { ...editedIssue, issueId: newIssueId, projectId: editedIssue.projectId};  // 등록 모드: 새 이슈 아이디 추가
+  
     setWorkerState((prevWorkers) =>
       prevWorkers.map((worker) => {
-        if (worker.id === editedIssue.workerId) {
-          const newPeriod = {
-            projectId: editedIssue.projectId, // projectId 추가
-            startDate: editedIssue.startDate,
-            endDate: editedIssue.endDate,
-          };
+        if (worker.periods.some((period) => period.issueId === newIssue.issueId)) {
           return {
             ...worker,
-            periods: [...worker.periods, newPeriod], // 새 기간 추가
+            periods: worker.periods.filter((period) => period.issueId !== newIssue.issueId),
           };
         }
         return worker;
       })
     );
   
-    onSave(editedIssue); // 이슈 저장
+    setWorkerState((prevWorkers) =>
+      prevWorkers.map((worker) => {
+        if (worker.id === newIssue.workerId) {
+          const newPeriod = {
+            startDate: newIssue.startDate,
+            endDate: newIssue.endDate,
+            issueId: newIssue.issueId,
+          };
+          return {
+            ...worker,
+            periods: [...worker.periods, newPeriod], // 새로운 작업자의 periods 추가
+          };
+        }
+        return worker;
+      })
+    );
+  
+    if (isEditMode) {
+      //이슈 수정
+      setIssuesState((prevIssues) =>
+        prevIssues.map((existingIssue) =>
+          existingIssue.issueId === newIssue.issueId ? newIssue : existingIssue
+        )
+      );
+    } else {
+      // 이슈 등록
+      setIssuesState((prevIssues) => [...prevIssues, newIssue]);
+    }
+  
+    onSave(newIssue); // 부모로 데이터 전달
     onClose(); // 모달 닫기
   };
-
+  
   const handleEditClick = () => {
     setIsEditable(true); // 수정 버튼 클릭 시 입력 활성화
   };
@@ -190,11 +257,15 @@ function IssueModal({ issue, workers, onClose, onSave, mode }) {
               <option value="" disabled>
                 작업자 선택
               </option>
-              {availableWorkers.map((worker) => (
-                <option key={worker.id} value={worker.id}>
-                  {worker.name}
-                </option>
-              ))}
+              {workersState.map((worker) => {
+            // 작업이 불가능한지 체크 (즉, availableWorkers에 포함되지 않은 작업자)
+            const isWorkerAvailable = availableWorkers.some((availableWorker) => availableWorker.id === worker.id);
+            return (
+              <option key={worker.id} value={worker.id} disabled={!isWorkerAvailable}>
+                {worker.name}
+              </option>
+            );
+          })}
             </select>
           </div>
           <div className="issue-field">

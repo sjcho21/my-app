@@ -1,11 +1,18 @@
-import React from "react";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { issuesState, project } from "./atom";
 
-function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
+function ProjectModal({ projectId, onClose, onIssueClick, onAddIssue }) {
+
+  const projects = useRecoilValue(project);
+  const issues = useRecoilValue(issuesState);
+  const currentProject = projects.find((p) => p.projectId === projectId); // 선택한 프로젝트 (Modal 에 Display 되는 프로젝트)
+  const projectIssues = issues.filter((issue) => issue.projectId === currentProject.projectId); //(projectId 로 종속된 이슈)
+
   return (
     <div className="modal">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>{project.name}</h2>
+          <h2>{currentProject.name}</h2>
           <button className="close-button" onClick={onClose}>
             &times;
           </button>
@@ -13,41 +20,42 @@ function ProjectModal({ project, onClose, onIssueClick, onAddIssue }) {
         <div className="modal-body">
           <ul>
             <li>
-              <strong>담당자:</strong> {project.manager}
+              <strong>담당자:</strong> {currentProject.manager}
             </li>
             <li>
-              <strong>시작일:</strong> {project.startDate}
+              <strong>시작일:</strong> {currentProject.startDate}
             </li>
             <li>
-              <strong>종료일:</strong> {project.endDate}
+              <strong>종료일:</strong> {currentProject.endDate}
             </li>
           </ul>
           <h3>이슈</h3>
-            <button className="add-button" onClick={() => onAddIssue()}>이슈 등록</button>
-            <table className="issues-table">
+          <button className="add-button" onClick={() => onAddIssue(projectId)}>이슈 등록</button>
+          <table className="issues-table">
             <thead>
-                <tr>
+              <tr>
                 <th>이슈 ID</th>
                 <th>제목</th>
                 <th>상태</th>
                 <th>작업자</th>
-                </tr>
+              </tr>
             </thead>
             <tbody>
-                {project.issues.map((issue) => (
-                <tr key={issue.id} onClick={() => onIssueClick(issue)} className="clickable">
-                    <td>{issue.id}</td>
-                    <td>{issue.title}</td>
-                    <td>{issue.status}</td>
-                    <td>{issue.workerName}</td>
+              {projectIssues.map((issue) => (
+                <tr key={issue.issueId} onClick={() => onIssueClick(issue.issueId)} className="clickable">
+                  <td>{issue.issueId}</td>
+                  <td>{issue.title}</td>
+                  <td>{issue.status}</td>
+                  <td>{issue.workerName}</td>
                 </tr>
-                ))}
+              ))}
             </tbody>
-            </table>
+          </table>
         </div>
       </div>
     </div>
   );
 }
+
 
 export default ProjectModal;

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { workersState } from "./assets/project/atom"; //작업자 명단
+import { issuesState } from "./assets/project/atom";
 import { header } from "./assets/project/atom"; //프로젝트 헤더 목록
 import { project } from "./assets/project/atom"; //프로젝트 목록
 import { calculateMonths } from "./assets/project/date_util.jsx"; //프로젝트 기간 계산
@@ -13,43 +14,77 @@ import "./App.css";
 
 function App() {
   const headers = useRecoilValue(header) //헤더목록
-    
   const [items, setItems] = useRecoilState(project); //프로젝트 데이터
-
   const workers = useRecoilValue(workersState) // 작업자 명단
-
-  const processedItems = items.map((item) => {
-    const totalDays = item.issues.reduce((sum, issue) => {
-      const days = Number(issue.days) || 0; 
-      return sum + days;
-    }, 0);
-  
-    return {
-      ...item,
-      issue: `${item.issues.length}개`, // 이슈 개수
-      term: totalDays, // days 기준으로 term 표시
-    };
-  });
-
-  const calculateOverallProgress = (issues) => {
-    if (issues.length === 0) return 0; // 이슈가 없으면 진행률은 0
-    const totalProgress = issues.reduce((total, issue) => total + issue.expRate, 0);
-    return Math.floor(totalProgress / issues.length); // 이슈들의 평균 진행률
-  };
-
+  const [issues, setIssues] = useRecoilState(issuesState); //이슈 데이터
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueModalMode, setIssueModalMode] = useState("edit"); 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [updatedProjectId, setUpdatedProjectId] = useState(null); // 변경된 프로젝트 추적
   const [newProject, setNewProject] = useState({
-    id: null,
+    id: "",
     name: "",
     manager: "",
     startDate: "",
-    issues: [],
   });
+
+  //진행준인 프로젝트의 이슈 갯수
+  const processedItems = items.map((item) => {
+    const issuesCount = issues.filter(
+      (issue) => issue.projectId === item.projectId
+    ).length;
+    return {
+      ...item,
+      issue: `${issuesCount}개`,
+    };
+  });
+
+  // 전체 이슈 계산(진척룰, 시작일, 종료일)
+const calculateProjectMetrics = (projectId, issues) => {
+  const projectIssues = issues.filter(issue => issue.projectId === projectId);
+
+  // 프로젝트 시작일 계산
+  const updatedStartDate = projectIssues.length > 0
+    ? projectIssues
+        .map(issue => new Date(issue.startDate))
+        .reduce((earliest, current) => (current < earliest ? current : earliest))
+        .toISOString()
+        .split("T")[0]
+    : null;
+
+  // 프로젝트 종료일 계산
+  const updatedEndDate = projectIssues.length > 0
+    ? projectIssues
+        .map(issue => new Date(issue.endDate))
+        .reduce((latest, current) => (current > latest ? current : latest))
+        .toISOString()
+        .split("T")[0]
+    : null;
+
+  // 총 작업 일수 계산
+  const totalDays = projectIssues.reduce((sum, issue) => sum + (parseInt(issue.days, 10) || 0), 0);
+
+  // 전체 진행률 계산
+  const overallProgress = calculateOverallProgress(projectIssues);
+
+  return {
+    startDate: updatedStartDate,
+    endDate: updatedEndDate,
+    term: totalDays,
+    progress: overallProgress,
+  };
+};
+
+  
+  //진행률 계산
+  const calculateOverallProgress = (issues) => {
+    if (issues.length === 0) return 0; // 이슈가 없으면 진행률은 0
+    const totalProgress = issues.reduce((total, issue) => total + issue.expRate, 0);
+    return Math.floor(totalProgress / issues.length); // 이슈들의 평균 진행률
+  };
 
   // 프로젝트 모달 열기/닫기
   const openModal = (project) => {
@@ -77,101 +112,67 @@ function App() {
   // 프로젝트 모달 열기/닫기
   const openProjectModal = () => {
     setNewProject({
-      id: null,
+      projectId: null,
       division: "",
       name: "",
       client: "",
       manager: "",
       startDate: "",
-      term: "",
-      issues: [],
+      term: ""    
     }); 
     setIsProjectModalOpen(true);
   };
   
   const closeProjectModal = () => {
     setNewProject({
-      id: null,
+      projectId: null,
       division: "",
       name: "",
       client: "",
       manager: "",
       startDate: "",
-      term: "",
-      issues: [],
+      term: ""
     }); 
     setIsProjectModalOpen(false);
   };
   
-  // 이슈 수정
-const updateIssue = (updatedIssue) => {
-  setItems((prevItems) =>
-    prevItems.map((item) => {
-      if (item.name === selectedProject.name) {
-        const updatedIssues = item.issues.map((issue) =>
-          issue.id === updatedIssue.id ? updatedIssue : issue
-        );
-
-        // 새로운 시작 날짜 계산
-        const updatedStartDate = updatedIssues
-          .map((issue) => new Date(issue.startDate))
-          .reduce((earliest, current) => (current < earliest ? current : earliest))
-          .toISOString()
-          .split("T")[0];
-        
-        // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
-        const updatedEndDate = updatedIssues
-          .map((issue) => new Date(issue.endDate))
-          .reduce((latest, current) => (current > latest ? current : latest))
-          .toISOString()
-          .split("T")[0];
-        
-          const totalDays = updatedIssues.reduce((sum, issue) => {
-            const days = parseInt(issue.days, 10) || 0; 
-            return sum + days; 
-          }, 0);
-
-        const overallProgress = calculateOverallProgress(updatedIssues);
-
-        return {
-          ...item,
-          issues: updatedIssues,
-          startDate: updatedStartDate,
-          endDate: updatedEndDate,
-          term: totalDays,
-          progress: overallProgress
-        };
-      }
-      return item;
-    })
-  );
-
-  // 프로젝트 모달도 업데이트
-  setSelectedProject((prevProject) => {
-    const updatedIssues = prevProject.issues.map((issue) =>
-      issue.id === updatedIssue.id ? updatedIssue : issue
+  const updateIssue = (updIssue) => {
+    setIssues((prevIssues) => prevIssues.map((issue) => (issue.issueId === updIssue.issueId ? updIssue : issue)));
+    setUpdatedProjectId(updIssue.projectId);
+  };
+  
+  useEffect(() => {
+    if (!updatedProjectId) return;
+  
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.projectId === updatedProjectId) {
+          const updatedMetrics = calculateProjectMetrics(updatedProjectId, issues);
+          return {
+            ...item,
+            ...updatedMetrics,
+          };
+        }
+        return item;
+      })
     );
-    const updatedStartDate = updatedIssues
-      .map((issue) => new Date(issue.startDate))
-      .reduce((earliest, current) => (current < earliest ? current : earliest))
-      .toISOString()
-      .split("T")[0];
+  
+    setSelectedProject((prevProject) => {
+      if (!prevProject || prevProject.projectId !== updatedProjectId) return prevProject;
+  
+      const updatedMetrics = calculateProjectMetrics(updatedProjectId, issues);
+  
+      return {
+        ...prevProject,
+        issues: issues.filter((issue) => issue.projectId === updatedProjectId),
+        ...updatedMetrics,
+      };
+    });
+  
+    // 업데이트 완료 후 상태 초기화
+    setUpdatedProjectId(null);
+  }, [updatedProjectId, issues]); // updatedProjectId나 issues가 변경될 때 실행
 
-    // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
-    const updatedEndDate = updatedIssues
-    .map((issue) => new Date(issue.endDate))
-    .reduce((latest, current) => (current > latest ? current : latest))
-    .toISOString()
-    .split("T")[0];
-
-    return {
-      ...prevProject,
-      issues: updatedIssues,
-      startDate: updatedStartDate,
-      endDate: updatedEndDate,
-    };
-  });
-};
 
    // 프로젝트 등록
    const handleAddProject = () => {
@@ -192,77 +193,80 @@ const updateIssue = (updatedIssue) => {
       alert("담당자를 입력해 주세요.");
       return;
     }
-    const newId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
-    setItems([...items, { ...newProject, id: newId }]);
+    const newId = items.length > 0 ? items[items.length - 1].projectId + 1 : 1;
+    setItems([...items, { ...newProject, projectId: newId }]);
     closeProjectModal();
   };
 
 
-  // 이슈 등록
+  // 이슈 등록 (이슈 날짜에 따른 프로젝트 날짜 변경)
   const addIssue = (newIssue) => {
+
     setItems((prevItems) =>
       prevItems.map((item) => {
-        if (item.name === selectedProject.name) {
-        const updatedIssues = [...item.issues, newIssue];
+        if (item.projectId === selectedProject.projectId) {
+          
+          let updatedIssues;
+          if (Array.isArray(item.issues)) {
+            updatedIssues = [...item.issues, newIssue]; 
+          } else if (typeof item.issues === "object" && item.issues !== null) {
+            updatedIssues = [item.issues, newIssue]; 
+          } else {
+            updatedIssues = [newIssue]; 
+          }
 
-        // 새로운 시작 날짜 계산
-        const updatedStartDate = updatedIssues
-        .map((issue) => new Date(issue.startDate))
-        .reduce((earliest, current) => (current < earliest ? current : earliest))
-        .toISOString()
-        .split("T")[0];
-      
-        // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
-        const updatedEndDate = updatedIssues
-        .map((issue) => new Date(issue.endDate))
-        .reduce((latest, current) => (current > latest ? current : latest))
-        .toISOString()
-        .split("T")[0];
-
-        const totalDays = updatedIssues.reduce((sum, issue) => {
-          const days = parseInt(issue.days, 10) || 0; // 'days'를 숫자로 변환
-          return sum + days; // 숫자 합산
-        }, 0);
-
-        const overallProgress = calculateOverallProgress(updatedIssues);
-
-        return {
-          ...item,
-          issues: updatedIssues,
-          startDate: updatedStartDate,
-          endDate: updatedEndDate,
-          term: totalDays,
-          progress: overallProgress
-        };
-      }
+          const updatedMetrics = calculateProjectMetrics(newIssue.projectId, [...issues, newIssue]);
+  
+          const updatedStartDate = updatedIssues
+            .map((issue) => new Date(issue.startDate))
+            .reduce((earliest, current) => (current < earliest ? current : earliest), new Date())
+            .toISOString()
+            .split("T")[0];
+  
+          const updatedEndDate = updatedIssues
+            .map((issue) => new Date(issue.endDate))
+            .reduce((latest, current) => (current > latest ? current : latest), new Date())
+            .toISOString()
+            .split("T")[0];
+  
+          return {
+            ...item,
+            ...updatedMetrics
+          };
+        }
         return item;
       })
     );
-
-    // 프로젝트 모달도 업데이트
+  
     setSelectedProject((prevProject) => {
-      const updatedIssues = [...prevProject.issues, newIssue];
-
-      //새로운 날짜 계산
+      if (!prevProject) return prevProject; 
+  
+      let updatedIssues;
+      if (Array.isArray(prevProject.issues)) {
+        updatedIssues = [...prevProject.issues, newIssue]; 
+      } else if (typeof prevProject.issues === "object" && prevProject.issues !== null) {
+        updatedIssues = [prevProject.issues, newIssue]; 
+      } else {
+        updatedIssues = [newIssue]; 
+      }
+  
       const updatedStartDate = updatedIssues
         .map((issue) => new Date(issue.startDate))
-        .reduce((earliest, current) => (current < earliest ? current : earliest))
+        .reduce((earliest, current) => (current < earliest ? current : earliest), new Date())
         .toISOString()
         .split("T")[0];
-      
-       // 새로운 종료 날짜 계산 (가장 늦은 이슈의 종료 날짜)
-       const updatedEndDate = updatedIssues
-       .map((issue) => new Date(issue.endDate))
-       .reduce((latest, current) => (current > latest ? current : latest))
-       .toISOString()
-       .split("T")[0];  
-          
-
+  
+      const updatedEndDate = updatedIssues
+        .map((issue) => new Date(issue.endDate))
+        .reduce((latest, current) => (current > latest ? current : latest), new Date())
+        .toISOString()
+        .split("T")[0];
+  
       return {
         ...prevProject,
-        issues: updatedIssues,
+        issues: updatedIssues, 
         startDate: updatedStartDate,
-        endDate: updatedEndDate
+        endDate: updatedEndDate,
       };
     });
   };
@@ -278,7 +282,7 @@ const updateIssue = (updatedIssue) => {
 
        {/* 프로젝트 등록 모달 */}
        <ProjectAddModal
-         isOpen={isProjectModalOpen}
+        isOpen={isProjectModalOpen}
         workers={workers}
         newProject={newProject}
         onClose={closeProjectModal}
@@ -289,7 +293,7 @@ const updateIssue = (updatedIssue) => {
       {/* 프로젝트 모달 */}
       {isModalOpen && (
         <ProjectModal
-          project={selectedProject}
+          projectId={selectedProject.projectId}
           onClose={closeModal}
           onIssueClick={(issue) => openIssueModal(issue, "edit")} // 이슈 수정
           onAddIssue={() => openIssueModal(null, "add")} // 이슈 등록
@@ -298,24 +302,25 @@ const updateIssue = (updatedIssue) => {
 
       {/* 이슈 모달 */}
       {isSecondModalOpen && (
-         <IssueModal
-         issue={selectedIssue}
-         mode={issueModalMode} 
-         workers={workers}
-         onClose={closeIssueModal}
-         onSave={(issue) => {
-            const lastIssueId =
-              selectedProject?.issues?.slice(-1)[0]?.id || 0; // 마지막 이슈 ID
-            const newId = lastIssueId + 1; // 새로운 이슈 ID
-     
-           if (issueModalMode === "edit") {
-             updateIssue(issue);
-           } else {
-             addIssue({ ...issue, id: newId }); 
-           }
-           closeIssueModal();
-         }}
-       />
+          <IssueModal
+          issue={selectedIssue}
+          mode={issueModalMode} 
+          onClose={closeIssueModal}
+          projectId={selectedProject.projectId}
+          onSave={(issue) => {          
+            if (!issue.projectId) {
+              issue = { ...issue, projectId: selectedProject?.projectId };
+            }
+          
+            if (issueModalMode === "edit") {
+              updateIssue(issue); //이슈 수장
+            } else {
+              addIssue(issue); // 이슈 등록
+            }
+          
+            closeIssueModal();
+          }}
+        />
       )}
     </div>
   );

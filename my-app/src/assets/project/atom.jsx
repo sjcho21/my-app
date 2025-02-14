@@ -25,10 +25,10 @@ export const managersState = atom({
 export const workersState = atom({
   key: "workersState",
   default: [
-    { id: 1, name: "홍길동", periods: [{ startDate: "2025-02-02", endDate: "2025-02-05" }] },
-    { id: 2, name: "박지현", periods: [{ startDate: "2025-02-15", endDate: "2025-02-25" }] },
-    { id: 3, name: "김철수", periods: [] }, // 할당된 프로젝트가 없음
-    { id: 4, name: "이영희", periods: [{ startDate: "2025-02-01", endDate: "2025-02-12" }] },
+    { id: 1, name: "홍길동", periods: [] },
+    { id: 2, name: "박지현", periods: [] },
+    { id: 3, name: "김철수", periods: [] }, 
+    { id: 4, name: "이영희", periods: [] }
   ],
 });
 
@@ -38,21 +38,25 @@ export const project = atom({
   key: "project", 
   default: [
     {
+      projectId: 1,
       division: "리서치",
       name: "프로젝트 A",
       client: "고객사 A",
-      term: "90",
-      manager: "매니져2",
-      issues: [ ],
+      manager: "매니져2"
     },
     {
+      projectId: 2,
       division: "리서치",
       name: "프로젝트 B",
       client: "고객사 B",
-      term: "120",
-      manager: "매니져4",
-      issues: [ ],
+      manager: "매니져4"
     },
   ],
 });
 
+
+// IssuesState: 작업자 정보 포함
+export const issuesState = atom({
+  key: "issuesState",
+  default: [ ],
+});
