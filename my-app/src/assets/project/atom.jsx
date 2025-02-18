@@ -60,3 +60,20 @@ export const issuesState = atom({
   key: "issuesState",
   default: [ ],
 });
+
+//현재 수정중인 이슈
+export const editedIssueState = atom({
+  key: "editedIssueState",
+  default: {
+    title: "",
+    status: "",
+    description: "",
+    workerId: null,
+    startDate: "",
+    days: 0,
+    endDate: "",
+    actRate: "",
+    expRate: "",
+    projectId: "",
+  },
+});

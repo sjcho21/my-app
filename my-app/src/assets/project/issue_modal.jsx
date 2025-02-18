@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { workersState as workersAtom, issuesState as issuesAtom } from "./atom";
+import { workersState as workersAtom, issuesState as issuesAtom, editedIssueState } from "./atom";
 
 function IssueModal({ issue, onClose, onSave, mode, projectId }) {
 
   const [workersState , setWorkerState] = useRecoilState(workersAtom);
   const [issuesState , setIssuesState] = useRecoilState(issuesAtom);
   const isEditMode = !!issue; // issue가 있으면 수정 모드
-  const [editedIssue, setEditedIssue] = useState(
-    issue || { title: "", status: "", description: "", workerId: null, startDate: "", days: 0, endDate: "", actRate: "", expRate: "", projectId: projectId || ""}
-  );
+  const [editedIssue, setEditedIssue] = useRecoilState(editedIssueState);
   const [isEditable, setIsEditable] = useState(mode === "add"); //add 일때 true 아니면 false
   const [availableWorkers, setAvailableWorkers] = useState([]);
 
@@ -22,6 +20,13 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
     }
   }, [currentIssue]); 
 
+  useEffect(() => {
+    setEditedIssue(prev => ({
+      ...prev,
+      projectId: prev.projectId || projectId || ""
+    }));
+  }, [projectId]);
+
   // 작업 종료일 계산 USEFFECT 사용하여 렌더링 될때다마 계산
   useEffect(() => {
     if (editedIssue.startDate && editedIssue.days > 0) {
@@ -33,36 +38,47 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
 
         setEditedIssue((prev) => {
           if (prev.endDate === calculatedEndDate) {
-            return prev; // ✅ 동일하면 업데이트하지 않음 (불필요한 리렌더링 방지)
+            return prev; // 동일하면 업데이트하지 않음 (불필요한 리렌더링 방지)
           }
           return { ...prev, endDate: calculatedEndDate };
         });
       }
   }, [editedIssue.startDate, editedIssue.days]);
 
-   useEffect(() => {
-    if (editedIssue.startDate && editedIssue.endDate) {
-      const issueStart = new Date(editedIssue.startDate);
-      const issueEnd = new Date(editedIssue.endDate);
-
-      const filteredWorkers = workersState.filter((worker) => {
-        // 모든 작업자 기간 중 겹치지 않는 경우만 허용
-        return worker.periods.every(({ startDate, endDate }) => {
-          const workerStart = new Date(startDate);
-          const workerEnd = new Date(endDate);
-          // 겹치는 조건: 새 작업 시작일이 기존 작업 종료일 이후 || 새 작업 종료일이 기존 작업 시작일 이전
-          return issueEnd < workerStart || issueStart > workerEnd;
-        });
-      });
-
-      setAvailableWorkers((prev) => 
-        JSON.stringify(prev) !== JSON.stringify(filteredWorkers) ? filteredWorkers : prev //기존 작업가증자 명단 과 새로운 작업가능자 명단 비교
-      );
-    } else {
-      setAvailableWorkers((prev) => (prev.length !== 0 ? [] : prev)); // 다를 경우만 setState 호출
+  useEffect(() => {
+    if (!editedIssue.startDate || !editedIssue.endDate) {
+      setAvailableWorkers([]);
+      return;
     }
-
+  
+    const issueStart = new Date(editedIssue.startDate);
+    const issueEnd = new Date(editedIssue.endDate);
+  
+    // 현재 수정 중인 이슈는 작업 가능 여부 체크에서 제외
+    const filteredWorkers = workersState.filter((worker) =>
+      worker.periods.every(({ startDate, endDate, issueId }) => {
+        if (issueId === editedIssue.issueId) return true; // 현재 수정 중인 이슈는 체크 제외
+        const workerStart = new Date(startDate);
+        const workerEnd = new Date(endDate);
+        return issueEnd < workerStart || issueStart > workerEnd;
+      })
+    );
+  
+    setAvailableWorkers((prev) =>
+      JSON.stringify(prev) !== JSON.stringify(filteredWorkers) ? filteredWorkers : prev
+    );
   }, [editedIssue.startDate, editedIssue.endDate, workersState]);
+  
+  useEffect(() => {
+    if (!editedIssue.workerId) return;
+  
+    const isWorkerStillAvailable = availableWorkers.some(worker => worker.id === editedIssue.workerId);
+  
+    setEditedIssue(prev => ({
+      ...prev,
+      workerDisabled: !isWorkerStillAvailable, // 기존 workerId 유지하면서 비활성화 상태 추가
+    }));
+  }, [editedIssue.workerId, availableWorkers]);
 
    // workerId에 해당하는 workerName을 찾기
    useEffect(() => {
@@ -111,6 +127,23 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
     }
   }, [editedIssue.startDate, editedIssue.endDate]);
 
+  useEffect(() => {
+    if (!isEditMode) {
+      setEditedIssue({
+        title: "",
+        status: "",
+        description: "",
+        workerId: null,
+        startDate: "",
+        days: 0,
+        endDate: "",
+        actRate: "",
+        expRate: "",
+        projectId: projectId || ""
+      });
+    }
+  }, [onClose]); //모달이 닫길때마다 등록이슈 초기화
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEditedIssue((prev) => ({ ...prev, [name]: value }));
@@ -141,16 +174,44 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
       alert("작업 기간을 입력해주세요 (1 이상)."); 
       return; 
     }
+
+    // 최종적으로 작업자가 작업 가능 여부를 확인
+    const isWorkerStillAvailable = availableWorkers.some(worker => worker.id === editedIssue.workerId); //현재 작업중인 작업자
+
+    
+    // 현재 기간과 겹치는 이슈 찾기
+    const overlappingIssues = issuesState.filter(issue => {
+      if (issue.workerId !== editedIssue.workerId || issue.issueId === editedIssue.issueId) return false;
+
+      const issueStart = new Date(issue.startDate);
+      const issueEnd = new Date(issue.endDate);
+      const editedStart = new Date(editedIssue.startDate);
+      const editedEnd = new Date(editedIssue.endDate);
+
+      return !(editedEnd < issueStart || editedStart > issueEnd);
+    });
+
+    if (!isWorkerStillAvailable) {
+      // 사용자에게 알림
+      if (overlappingIssues.length > 0) {
+        const message = `⚠️ 선택한 작업자는 다음 작업과 겹칩니다:\n` +
+          overlappingIssues.map(issue => `- ${issue.title} (${issue.startDate} ~ ${issue.endDate})`).join("\n") +
+          `\n\n가능한 다른 작업자를 선택해주세요.`;
+        alert(message);
+        return;
+      }
+    }
   
-    // 새로운 issueId 생성 (추가 모드일 경우)
+    // 새로운 이슈 생성
     const newIssueId =
-      issuesState.length > 0
-        ? Math.max(...issuesState.map((issue) => issue.issueId)) + 1
-        : 1;
-  
+    issuesState.length > 0
+      ? Math.max(...issuesState.map((issue) => issue.issueId)) + 1
+      : 1;
+
     const newIssue = isEditMode
-      ? { ...editedIssue } // 수정 모드: 기존 값 유지
-      : { ...editedIssue, issueId: newIssueId, projectId: editedIssue.projectId};  // 등록 모드: 새 이슈 아이디 추가
+      ? { ...editedIssue }
+      : { ...editedIssue, issueId: newIssueId, projectId: projectId || "" };
+
   
     setWorkerState((prevWorkers) =>
       prevWorkers.map((worker) => {
@@ -181,21 +242,50 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
       })
     );
   
-    if (isEditMode) {
-      //이슈 수정
-      setIssuesState((prevIssues) =>
-        prevIssues.map((existingIssue) =>
-          existingIssue.issueId === newIssue.issueId ? newIssue : existingIssue
-        )
-      );
-    } else {
-      // 이슈 등록
-      setIssuesState((prevIssues) => [...prevIssues, newIssue]);
-    }
-  
-    onSave(newIssue); // 부모로 데이터 전달
-    onClose(); // 모달 닫기
-  };
+    // 새로운 이슈 생성 (추가 모드)
+  if (!isEditMode) {
+    const newIssueId =
+      issuesState.length > 0
+        ? Math.max(...issuesState.map((issue) => issue.issueId)) + 1
+        : 1;
+
+    const newIssue = {
+      ...editedIssue,
+      issueId: newIssueId,
+      projectId: projectId || ""
+    };
+
+    // 이슈 상태 업데이트 (새로운 이슈 추가)
+    setIssuesState(prevIssues => [...prevIssues, newIssue]);
+  } 
+  // 수정 모드 처리 (기존 이슈 수정)
+  else {
+    setIssuesState(prevIssues =>
+      prevIssues.map(issue =>
+        issue.issueId === editedIssue.issueId ? editedIssue : issue
+      )
+    );
+  }
+
+  // 이슈 저장 후 초기화 (추가 모드일 때만 초기화)
+  if (!isEditMode) {
+    setEditedIssue({
+      title: "",
+      status: "",
+      description: "",
+      workerId: null,
+      startDate: "",
+      days: 0,
+      endDate: "",
+      actRate: "",
+      expRate: "",
+      projectId: projectId || ""
+    });
+  }
+
+  onSave(editedIssue);
+  onClose();
+};
   
   const handleEditClick = () => {
     setIsEditable(true); // 수정 버튼 클릭 시 입력 활성화
@@ -248,24 +338,27 @@ function IssueModal({ issue, onClose, onSave, mode, projectId }) {
           </div>
           <div className="issue-field">
             <strong>작업자:</strong>
-            <select
+              <select
               name="workerId"
               value={editedIssue.workerId || ""}
               onChange={(e) => setEditedIssue((prev) => ({ ...prev, workerId: Number(e.target.value) }))}
               disabled={!isEditable || availableWorkers.length === 0}
             >
-              <option value="" disabled>
-                작업자 선택
-              </option>
-              {workersState.map((worker) => {
-            // 작업이 불가능한지 체크 (즉, availableWorkers에 포함되지 않은 작업자)
-            const isWorkerAvailable = availableWorkers.some((availableWorker) => availableWorker.id === worker.id);
-            return (
-              <option key={worker.id} value={worker.id} disabled={!isWorkerAvailable}>
-                {worker.name}
-              </option>
-            );
-          })}
+              <option value="" disabled>작업자 선택</option>
+              
+              {/* ✅ 기존 작업자가 해당 이슈를 처리 못하는 경우, select의 최상단에 표시 (비활성화) */}
+              {!availableWorkers.some(worker => worker.id === editedIssue.workerId) && editedIssue.workerId && (
+                <option value={editedIssue.workerId} disabled>
+                  {workersState.find(worker => worker.id === editedIssue.workerId)?.name || "작업자 없음 (비활성화)"}
+                </option>
+              )}
+
+              {/* ✅ 사용 가능한 작업자 목록 */}
+              {availableWorkers.map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="issue-field">

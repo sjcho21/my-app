@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { workersState } from "./assets/project/atom"; //작업자 명단
-import { issuesState } from "./assets/project/atom";
+import { issuesState } from "./assets/project/atom"; // 이슈 목록
 import { header } from "./assets/project/atom"; //프로젝트 헤더 목록
 import { project } from "./assets/project/atom"; //프로젝트 목록
 import { calculateMonths } from "./assets/project/date_util.jsx"; //프로젝트 기간 계산
@@ -81,10 +81,22 @@ const calculateProjectMetrics = (projectId, issues) => {
   
   //진행률 계산
   const calculateOverallProgress = (issues) => {
-    if (issues.length === 0) return 0; // 이슈가 없으면 진행률은 0
-    const totalProgress = issues.reduce((total, issue) => total + issue.expRate, 0);
-    return Math.floor(totalProgress / issues.length); // 이슈들의 평균 진행률
-  };
+    if (issues.length === 0) return 0; 
+
+    let totalProgress = 0;  
+    let totalDays = 0; 
+  
+    issues.forEach((issue) => {
+      const days = Number(issue.days); 
+
+      if (!days || days <= 0) return; 
+  
+      totalProgress += issue.expRate * days;
+      totalDays += days;
+    });
+  
+    return totalDays === 0 ? 0 : Math.floor(totalProgress / totalDays);
+};
 
   // 프로젝트 모달 열기/닫기
   const openModal = (project) => {
@@ -216,18 +228,6 @@ const calculateProjectMetrics = (projectId, issues) => {
           }
 
           const updatedMetrics = calculateProjectMetrics(newIssue.projectId, [...issues, newIssue]);
-  
-          const updatedStartDate = updatedIssues
-            .map((issue) => new Date(issue.startDate))
-            .reduce((earliest, current) => (current < earliest ? current : earliest), new Date())
-            .toISOString()
-            .split("T")[0];
-  
-          const updatedEndDate = updatedIssues
-            .map((issue) => new Date(issue.endDate))
-            .reduce((latest, current) => (current > latest ? current : latest), new Date())
-            .toISOString()
-            .split("T")[0];
   
           return {
             ...item,
