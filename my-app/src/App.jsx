@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { workersState } from "./assets/project/atom"; //작업자 명단
-import { issuesState } from "./assets/project/atom"; // 이슈 목록
-import { header } from "./assets/project/atom"; //프로젝트 헤더 목록
-import { project } from "./assets/project/atom"; //프로젝트 목록
-import { calculateMonths } from "./assets/project/date_util.jsx"; //프로젝트 기간 계산
-import IssueModal from "./assets/project/issue_modal.jsx";
-import DataTable from "./assets/project/data_table.jsx";
-import GraphTable from "./assets/project/graph_table.jsx";
-import ProjectModal from "./assets/project/project_modal.jsx";
-import ProjectAddModal from "./assets/project/add_project_modal.jsx";
+import { workersState , issuesState, header, project, selectedProjectState, selectedIssueState } from "./recoil/atom.jsx"; 
+import { calculateMonths } from "./utils/date_util.jsx"; 
+import { calculateProjectMetrics } from "./utils/project_util.jsx"; 
+import IssueModal from "./components/issue_modal.jsx";
+import DataTable from "./components/data_table.jsx";
+import GraphTable from "./components/graph_table.jsx";
+import ProjectModal from "./components/project_modal.jsx";
+import ProjectAddModal from "./components/add_project_modal.jsx";
 import "./App.css";
 
 function App() {
@@ -18,9 +16,9 @@ function App() {
   const workers = useRecoilValue(workersState) // 작업자 명단
   const [issues, setIssues] = useRecoilState(issuesState); //이슈 데이터
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedProject, setSelectedProject] = useRecoilState(selectedProjectState);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedIssue, setSelectedIssue] = useRecoilState(selectedIssueState);
   const [issueModalMode, setIssueModalMode] = useState("edit"); 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [updatedProjectId, setUpdatedProjectId] = useState(null); // 변경된 프로젝트 추적
@@ -30,8 +28,9 @@ function App() {
     manager: "",
     startDate: "",
   });
+  
 
-  //진행준인 프로젝트의 이슈 갯수
+  //진행중인 프로젝트의 이슈 갯수
   const processedItems = items.map((item) => {
     const issuesCount = issues.filter(
       (issue) => issue.projectId === item.projectId
@@ -41,62 +40,6 @@ function App() {
       issue: `${issuesCount}개`,
     };
   });
-
-  // 전체 이슈 계산(진척룰, 시작일, 종료일)
-const calculateProjectMetrics = (projectId, issues) => {
-  const projectIssues = issues.filter(issue => issue.projectId === projectId);
-
-  // 프로젝트 시작일 계산
-  const updatedStartDate = projectIssues.length > 0
-    ? projectIssues
-        .map(issue => new Date(issue.startDate))
-        .reduce((earliest, current) => (current < earliest ? current : earliest))
-        .toISOString()
-        .split("T")[0]
-    : null;
-
-  // 프로젝트 종료일 계산
-  const updatedEndDate = projectIssues.length > 0
-    ? projectIssues
-        .map(issue => new Date(issue.endDate))
-        .reduce((latest, current) => (current > latest ? current : latest))
-        .toISOString()
-        .split("T")[0]
-    : null;
-
-  // 총 작업 일수 계산
-  const totalDays = projectIssues.reduce((sum, issue) => sum + (parseInt(issue.days, 10) || 0), 0);
-
-  // 전체 진행률 계산
-  const overallProgress = calculateOverallProgress(projectIssues);
-
-  return {
-    startDate: updatedStartDate,
-    endDate: updatedEndDate,
-    term: totalDays,
-    progress: overallProgress,
-  };
-};
-
-  
-  //진행률 계산
-  const calculateOverallProgress = (issues) => {
-    if (issues.length === 0) return 0; 
-
-    let totalProgress = 0;  
-    let totalDays = 0; 
-  
-    issues.forEach((issue) => {
-      const days = Number(issue.days); 
-
-      if (!days || days <= 0) return; 
-  
-      totalProgress += issue.expRate * days;
-      totalDays += days;
-    });
-  
-    return totalDays === 0 ? 0 : Math.floor(totalProgress / totalDays);
-};
 
   // 프로젝트 모달 열기/닫기
   const openModal = (project) => {
@@ -295,7 +238,7 @@ const calculateProjectMetrics = (projectId, issues) => {
         <ProjectModal
           projectId={selectedProject.projectId}
           onClose={closeModal}
-          onIssueClick={(issue) => openIssueModal(issue, "edit")} // 이슈 수정
+          onIssueClick={(issueId) => openIssueModal(issueId, "edit")} // 이슈 수정
           onAddIssue={() => openIssueModal(null, "add")} // 이슈 등록
         />
       )}

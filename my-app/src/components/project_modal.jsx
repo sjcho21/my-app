@@ -1,12 +1,15 @@
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import { issuesState, project } from "./atom";
+import { useRecoilValue, useRecoilState } from "recoil";
+import { issuesState, project, selectedProjectState, workersState } from "../recoil/atom";
 
-function ProjectModal({ projectId, onClose, onIssueClick, onAddIssue }) {
+function ProjectModal({ onClose, onIssueClick, onAddIssue }) {
 
   const projects = useRecoilValue(project);
   const issues = useRecoilValue(issuesState);
+  const selectedProject = useRecoilValue(selectedProjectState);
+  const workers = useRecoilValue(workersState);
+  const projectId = selectedProject?.projectId;
+  const projectIssues = issues.filter((issue) => issue.projectId === projectId); //(projectId 로 종속된 이슈)
   const currentProject = projects.find((p) => p.projectId === projectId); // 선택한 프로젝트 (Modal 에 Display 되는 프로젝트)
-  const projectIssues = issues.filter((issue) => issue.projectId === currentProject.projectId); //(projectId 로 종속된 이슈)
 
   return (
     <div className="modal">
@@ -41,14 +44,18 @@ function ProjectModal({ projectId, onClose, onIssueClick, onAddIssue }) {
               </tr>
             </thead>
             <tbody>
-              {projectIssues.map((issue) => (
-                <tr key={issue.issueId} onClick={() => onIssueClick(issue.issueId)} className="clickable">
-                  <td>{issue.issueId}</td>
-                  <td>{issue.title}</td>
-                  <td>{issue.status}</td>
-                  <td>{issue.workerName}</td>
-                </tr>
-              ))}
+              {projectIssues.map((issue) => {
+                const worker = workers.find((worker) => worker.id === issue.workerId);
+                const workerName = worker ? worker.name : "미지정"; // 작업자 이름 찾기
+                return (
+                  <tr key={issue.issueId} onClick={() => onIssueClick(issue.issueId)} className="clickable">
+                    <td>{issue.issueId}</td>
+                    <td>{issue.title}</td>
+                    <td>{issue.status}</td>
+                    <td>{workerName}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

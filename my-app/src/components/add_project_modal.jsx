@@ -1,6 +1,6 @@
 import React from "react";
 import { useRecoilValue } from "recoil";
-import { managersState } from "./atom";
+import { managersState } from "../recoil/atom";
 
 function ProjectAddModal({
   isOpen,
@@ -11,7 +11,7 @@ function ProjectAddModal({
 }) {
   if (!isOpen) return null; 
 
-  const managers = useRecoilValue(managersState) // 작업자 명단
+  const managers = useRecoilValue(managersState) // 작업자 명단 (값이 변하지 않으므로 일단 유지)
 
   return (
     <div className="modal">

@@ -77,3 +77,15 @@ export const editedIssueState = atom({
     projectId: "",
   },
 });
+
+//현재 선택된 프로젝트
+export const selectedProjectState = atom({
+  key: "selectedProjectState",
+  default: {}
+})
+
+//현재 선택된 이슈
+export const selectedIssueState = atom({
+  key: "selectedIssueId",
+  default: {}
+})
