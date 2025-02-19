@@ -9,7 +9,7 @@ function IssueModal({ onClose, onSave, mode }) {
   const [issuesState , setIssuesState] = useRecoilState(issuesAtom);
   const [editedIssue, setEditedIssue] = useRecoilState(editedIssueState);
   const [isEditable, setIsEditable] = useState(mode === "add"); //add 일때 true 아니면 false
-  const availableWorkers = useRecoilValue(availableWorker); // 자동 계산된 상태 사용
+  const availableWorkers = useRecoilValue(availableWorker); 
   
   const selectedProject = useRecoilValue(selectedProjectState);
   const projectId = selectedProject?.projectId || "";
@@ -106,8 +106,11 @@ function IssueModal({ onClose, onSave, mode }) {
   }, [onClose]); //모달이 닫길때마다 등록이슈 초기화
 
   const handleChange = (e) => {
-    const { name, value } = e.target;  
-    setEditedIssue((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = e.target;
+    setEditedIssue((prev) => {
+      if (prev[name] === value) return prev; 
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSave = useCallback(() => {
