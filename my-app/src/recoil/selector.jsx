@@ -7,9 +7,7 @@ export const availableWorkersState = selector({
   get: ({ get }) => {
     
     const workers = get(workersState);
-    const editedIssue = get(editedIssueState); 
-
-    const { startDate, endDate, issueId } = editedIssue; //리렌더링 발생시킬 필수 값만 추출
+    const { startDate, endDate, issueId } = get(editedIssueState);
     
     if (!startDate || !endDate) return [];
 
